@@ -1,6 +1,12 @@
-from bs4 import BeautifulSoup
-from functools import reduce
+
 import string
+from functools import reduce
+
+try:
+    from bs4 import BeautifulSoup
+
+except Exception as e:
+    print('--- HACE FALTA INSTALAR UN PAR DE LIBRERÍAS PARA PARSEAR EL ARCHIVO JFLAP (MIRAR main DEL DOCUMENTO script.py) ---')
 
 """alfabeto = {"H", "I", "D", "A", "L", "G", "O"}
 estados = {"q0","q1","q2","q3","q4","q5","q6","q7"}
@@ -110,7 +116,15 @@ def generar_funcion_transicion(transiciones):
 
 
 def parsear_dfa_jflap(ruta_archivo):
-    xml = BeautifulSoup(lee_xml(ruta_archivo), 'xml')
+
+    xml = None
+
+    try:
+        xml = BeautifulSoup(lee_xml(ruta_archivo), 'xml')
+
+    except Exception as e:
+        print('--- HACE FALTA INSTALAR UN PAR DE LIBRERÍAS PARA PARSEAR EL ARCHIVO JFLAP (MIRAR main DEL DOCUMENTO script.py) ---')
+        exit(1)
 
     states = xml.find_all('state')
     transitions = xml.find_all('transition')
@@ -128,21 +142,17 @@ def parsear_dfa_jflap(ruta_archivo):
 
 def leer_palabras_test(ruta_archivo):
 
-    punc = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
-
     palabras = []
 
+    # Abrimos el archivo en modo lectura
     f = open(ruta_archivo, 'r', encoding="utf8")
 
-
-    i = 1
+    # Recorremos cada linea y sacamos las palabras sin signos de puntuacion
     for linea in f:
         for palabra in linea.split():
             palabra = palabra.translate(str.maketrans('', '', string.punctuation))
-            palabra = palabra.replace(u'\xad', ' ')
+            palabra = palabra.replace(u'\xad', '')
             palabras.append(palabra.upper())
-
-        i+=1
 
     f.close()
 
@@ -179,7 +189,7 @@ def automata_parte_2(palabras, alfabeto, estado_inicial, estados_finales, funcio
     aceptadas = []
 
     for palabra in palabras:
-        if test(palabra, estado_inicial, alfabeto, funcion_transicion, estados_finales):
+        if not test(palabra, estado_inicial, alfabeto, funcion_transicion, estados_finales):
             aceptadas.append(palabra)
 
     return aceptadas
@@ -195,10 +205,8 @@ if __name__ == "__main__":
     pip install beautifulsoup4
     """
 
-    ruta_archivo_jflap = "./ej2_minimizado.jff"
+    ruta_archivo_jflap = "./ej2_dfa_minimizado.jff"
     ruta_archivo_prueba = "./ElQuijote.txt"
-
-    print('--- HACE FALTA INSTALAR UN PAR DE LIBRERÍAS PARA PARSEAR EL ARCHIVO JFLAP ---')
 
     # Obtiene toda la información del DFA creado en JFLAP
     (estados, alfabeto, estado_inicial, estados_finales, funcion_transicion) = parsear_dfa_jflap(ruta_archivo_jflap)
@@ -212,4 +220,7 @@ if __name__ == "__main__":
     # Ahora, para la segunda parte, empleamos el DFA desarrollado en JFLAP
     aceptadas_parte_2 = automata_parte_2(aceptadas_parte_1, alfabeto, estado_inicial, estados_finales, funcion_transicion)
 
-    print('Palabras que han pasado el autómata: ' + str(len(aceptadas_parte_2)))
+    """print(aceptadas_parte_1)
+    print(len(aceptadas_parte_1))
+    print(aceptadas_parte_2)"""
+    print('Número de palabras que han sido aceptadas por el autómata: ' + str(len(aceptadas_parte_2)))
