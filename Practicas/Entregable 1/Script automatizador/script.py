@@ -16,7 +16,7 @@ La primera línea indicará:
     - Primera 	columna: Puede estar vacía o contener algo (se ignorará).
     - 2..(N-2) 	columa: Símbolos que componen el alfabeto.
     - N-1 		columna: Texto 'eps' que indicará las transiciones epsilon.
-    - N			columna: {-1, 0, 1} que indica si el estado es (en orden): inicial, 'normal', final
+    - N			columna: {-1, 0, 1, 2} que indica si el estado es (en orden): inicial, 'normal', final, inicial y final a la vez.
 
 El resto de líneas irán en consonancia. Ejemplo:
     q 	A 	B 	eps
@@ -32,10 +32,17 @@ ARCHIVO_INICIAL_EPS_NFA = 'tabla_con_epsilons_inicial.txt'
 ARCHIVO_INICIAL_DFA = 'tabla_dfa_inicial.txt'
 
 
-ARCHIVO_CLAUSURAS = 'tabla_clausuras_script.txt'
-ARCHIVO_NFA = 'tabla_nfa_script.txt'
-ARCHIVO_DFA = 'tabla_dfa_script.txt'
-ARCHIVO_DFA_MINIMIZADO = 'tabla_dfa_minimizado_script.txt'
+# Archivos que genera el script para la primera parte (...CGGTGT...)
+ARCHIVO_CLAUSURAS_DE_EPS_NFA = 'tabla_clausuras_script.txt'
+ARCHIVO_NFA_DE_EPS_NFA = 'tabla_nfa_de_eps_nfa_script.txt'
+ARCHIVO_DFA_DE_EPS_NFA = 'tabla_dfa_de_eps_nfa_script.txt'
+ARCHIVO_DFA_MINIMIZADO_DE_EPS_NFA = 'tabla_dfa_minimizado_de_eps_nfa_script.txt'
+
+# Archivos que genera el script para la segunda parte (AT... ó TA...)
+ARCHIVO_DFA_MINIMIZADO_DE_DFA = 'tabla_dfa_minimizado_de_dfa_script.txt'
+
+# Archivo que genera el script para la unión final de los dos DFA pedidos
+ARCHIVO_DFA_FINAL = 'tabla_dfa_final_minimizado_script.txt'
 
 ARCHIVO_TEST_ACEPTADAS_AUTOMATA_1 = './test_automata_1/aceptadas.txt'
 ARCHIVO_TEST_DENEGADAS_AUTOMATA_1 = './test_automata_1/denegadas.txt'
@@ -284,12 +291,17 @@ def guarda_clausuras(clausuras, archivo):
 
     with open(archivo, 'w') as f:
 
+        cabecera = 'estados\tcierres\n'
+        f.write(cabecera)
+
+
         for estado in clausuras.keys():
-            msg = '.'
+
+            msg = estado + '\t.'
 
             # Hay estados
             if len(clausuras[estado]) > 0:
-                msg = ''
+                msg = estado + '\t'
                 n = len(clausuras[estado])
                 clausuras_ordenadas = sorted(clausuras[estado], key=functools.cmp_to_key(comparar_estados))
                 for indx in range(n):
@@ -344,7 +356,7 @@ def guarda_nfa(nfa: AutomataFinito, archivo):
     with open(archivo, 'w') as f:
 
         # Escribimos la cabecera del archivo
-        cabecera = 'q\t'
+        cabecera = 'estados\t'
         for simbolo in nfa.alfabeto:
             cabecera += simbolo + '\t'
 
@@ -636,7 +648,7 @@ def guarda_dfa(automata_finito:AutomataFinito, archivo):
     with open(archivo, 'w') as f:
 
         # Escribimos la cabecera del archivo
-        cabecera = 'q\t'
+        cabecera = 'estados\t'
         for simbolo in automata_finito.alfabeto:
             cabecera += simbolo + '\t'
 
@@ -1114,6 +1126,9 @@ def obtiene_dfa_de_dfa(archivo):
     [tabla_transiciones, alfabeto, estado_inicial, estados_finales] = lee_dfa_de_archivo(ARCHIVO_INICIAL_DFA)
     dfa = AutomataFinito(tabla_transiciones, alfabeto, estado_inicial, estados_finales)
     dfa_minimizado = minimiza_dfa(dfa)
+
+    guarda_dfa(dfa_minimizado, ARCHIVO_DFA_MINIMIZADO_DE_DFA)
+
     return dfa_minimizado
 
 def obtiene_dfa_de_eps_nfa(archivo):
@@ -1124,19 +1139,19 @@ def obtiene_dfa_de_eps_nfa(archivo):
 
     # Obtenemos las clausuras de cada elemento y los guarda en un archivo en orden
     clausuras_nfa = genera_clausuras(tabla_transiciones)
-    guarda_clausuras(clausuras_nfa, ARCHIVO_CLAUSURAS)
+    guarda_clausuras(clausuras_nfa, ARCHIVO_CLAUSURAS_DE_EPS_NFA)
 
     # Generamos el NFA a partir del epsilon-nfa
     nfa = genera_nfa(eps_nfa, clausuras_nfa)
-    guarda_nfa(nfa, ARCHIVO_NFA)
+    guarda_nfa(nfa, ARCHIVO_NFA_DE_EPS_NFA)
 
     # Convertimos el NFA a un DFA
     dfa = genera_dfa(nfa)
-    guarda_dfa(dfa, ARCHIVO_DFA)
+    guarda_dfa(dfa, ARCHIVO_DFA_DE_EPS_NFA)
 
     # Minimizamos el dfa
     dfa_minimizado = minimiza_dfa(dfa)
-    guarda_dfa(dfa_minimizado, ARCHIVO_DFA_MINIMIZADO)
+    guarda_dfa(dfa_minimizado, ARCHIVO_DFA_MINIMIZADO_DE_EPS_NFA)
 
     return dfa_minimizado
 
@@ -1186,6 +1201,15 @@ def guarda_automata_finito(automata_finito, archivo):
 
 
 if __name__ == "__main__":
+    """
+    Librería necesarias:
+    
+        pip install numpy
+        pip install pandas
+        pip install pythomata
+    """
+
+
 
     # Autómata para la cadena que contenta ...TGGGCGTTT...
     #test_automata_parte_1()
@@ -1194,4 +1218,11 @@ if __name__ == "__main__":
     #test_automata_parte_2()
 
     # Autómata final
-    test_automata_parte_3()
+    #test_automata_parte_3()
+
+    # Generamos el autómata final
+    dfa_eps_nfa = obtiene_dfa_de_eps_nfa(ARCHIVO_INICIAL_EPS_NFA)
+    dfa_dfa = obtiene_dfa_de_dfa(ARCHIVO_INICIAL_DFA)
+    dfa_final = multiplica_dfa(dfa_eps_nfa, dfa_dfa, renombrar_estados=True)
+    dfa_final_minimizado = minimiza_dfa(dfa_final)
+    guarda_dfa(dfa_final_minimizado, ARCHIVO_DFA_FINAL)
