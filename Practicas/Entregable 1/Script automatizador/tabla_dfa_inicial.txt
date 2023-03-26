@@ -1,0 +1,6 @@
+q	A	C	G	T	tipo_estado
+q0	q1	q4	q4	q3	-1
+q1	q4	q4	q4	q2	0
+q2	q2	q2	q2	q2	1
+q3	q2	q4	q4	q4	0
+q4	q4	q4	q4	q4	0
