@@ -1,3 +1,4 @@
+import re
 import warnings
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -31,7 +32,6 @@ El resto de líneas irán en consonancia. Ejemplo:
 ARCHIVO_INICIAL_EPS_NFA = 'tabla_con_epsilons_inicial.txt'
 ARCHIVO_INICIAL_DFA = 'tabla_dfa_inicial.txt'
 
-
 # Archivos que genera el script para la primera parte (...CGGTGT...)
 ARCHIVO_CLAUSURAS_DE_EPS_NFA = 'tabla_clausuras_script.txt'
 ARCHIVO_NFA_DE_EPS_NFA = 'tabla_nfa_de_eps_nfa_script.txt'
@@ -53,6 +53,7 @@ ARCHIVO_TEST_DENEGADAS_AUTOMATA_2 = './test_automata_2/denegadas.txt'
 ARCHIVO_TEST_ACEPTADAS_AUTOMATA_3 = './test_automata_3/aceptadas.txt'
 ARCHIVO_TEST_DENEGADAS_AUTOMATA_3 = './test_automata_3/denegadas.txt'
 
+
 class AutomataFinito():
 
     def __init__(self, tabla_transiciones={}, alfabeto=[], estado_inicial='', estados_finales=set()):
@@ -62,12 +63,13 @@ class AutomataFinito():
         self.estados_finales = estados_finales
 
     def __str__(self):
-        msg = 'alfabeto: ' + str(self.alfabeto) + '\n'
-        msg += 'estado inicial: ' + str(self.estado_inicial) + '\n'
-        msg += 'estados finales: ' + str(self.estados_finales) + '\n'
-        msg += 'conjunto de estados: ' + str(list(self.tabla_transiciones.keys())) + '\n'
-        msg += 'tabla de transiciones: ' + str(self.tabla_transiciones)
+        msg = 'alfabeto = ' + str(self.alfabeto) + '\n'
+        msg += 'estado inicial = ' + str(self.estado_inicial) + '\n'
+        msg += 'estados finales = ' + str(self.estados_finales) + '\n'
+        msg += 'conjunto de estados = ' + str(list(self.tabla_transiciones.keys())) + '\n'
+        msg += 'tabla de transiciones = ' + str(self.tabla_transiciones)
         return msg
+
 
 class Particion():
 
@@ -125,6 +127,7 @@ def lee_eps_nfa_de_archivo(archivo):
 
     return [tabla_transiciones, alfabeto, estado_inicial[0], estados_finales]
 
+
 def parsea_datos_eps_nfa(tabla_transiciones, alfabeto, columnas, estados_iniciales, estados_finales):
     """
     Procesa el archivo recibido por parámetros con la tabla de eps-transiciones.
@@ -175,6 +178,7 @@ def parsea_datos_eps_nfa(tabla_transiciones, alfabeto, columnas, estados_inicial
     elif tipo_estado == '1':
         estados_finales.add(estado)
 
+
 def lee_dfa_de_archivo(archivo):
     """
     Lee la tabla de transiciones de un DFA de un archivo delimitado por tabulaciones.
@@ -204,6 +208,7 @@ def lee_dfa_de_archivo(archivo):
                 parsea_datos_dfa(tabla_transiciones, alfabeto, linea, estado_inicial, estados_finales)
 
     return [tabla_transiciones, alfabeto, estado_inicial[0], estados_finales]
+
 
 def parsea_datos_dfa(tabla_transiciones, alfabeto, columnas, estados_iniciales, estados_finales):
     """
@@ -237,6 +242,8 @@ def parsea_datos_dfa(tabla_transiciones, alfabeto, columnas, estados_iniciales, 
     # El estado es final
     elif tipo_estado == '1':
         estados_finales.add(estado)
+
+
 # ------------------------------------------------------
 
 
@@ -294,7 +301,6 @@ def guarda_clausuras(clausuras, archivo):
         cabecera = 'estados\tcierres\n'
         f.write(cabecera)
 
-
         for estado in clausuras.keys():
 
             msg = estado + '\t.'
@@ -350,7 +356,9 @@ def genera_nfa(automata_finito: AutomataFinito, clausuras):
             if siguiente_estado in automata_finito.estados_finales:
                 nuevos_estados_finales.add(estado)
 
-    return AutomataFinito(nueva_tabla_transiciones, automata_finito.alfabeto, automata_finito.estado_inicial, nuevos_estados_finales)
+    return AutomataFinito(nueva_tabla_transiciones, automata_finito.alfabeto, automata_finito.estado_inicial,
+                          nuevos_estados_finales)
+
 
 def guarda_nfa(nfa: AutomataFinito, archivo):
     with open(archivo, 'w') as f:
@@ -375,7 +383,6 @@ def guarda_nfa(nfa: AutomataFinito, archivo):
                 else:
                     msg += '.'
 
-
                 msg += '\t'
 
             # Añadimos el tipo de estado
@@ -394,6 +401,8 @@ def guarda_nfa(nfa: AutomataFinito, archivo):
             msg += '\n'
 
             f.write(msg)
+
+
 # -----------------------------------------------------
 
 
@@ -559,7 +568,6 @@ def generar_traduccion(tabla_transiciones, alfabeto, estados_finales, estado_ini
             if estado_siguiente not in conjunto_procesados:
                 cola_procesamiento.append(estado_siguiente)
 
-
             # Ya se ha traducido antes
             if estado in traducciones:
                 traduccion_actual = traducciones[estado]
@@ -598,7 +606,6 @@ def generar_traduccion(tabla_transiciones, alfabeto, estados_finales, estado_ini
                 hay_transiciones_a_estado_muerto = True
                 nueva_tabla_transiciones[traduccion_actual][simbolo] = q_muerto
 
-
     # El estado muerto sólo tendrá transiciones a sí mismo
     if hay_transiciones_a_estado_muerto:
         q_gradual = 'q{}'.format(q_gradual)
@@ -624,8 +631,8 @@ def generar_traduccion(tabla_transiciones, alfabeto, estados_finales, estado_ini
 
     return [nueva_tabla_transiciones, nuevos_estados_finales, traducciones[estado_inicial]]
 
-def genera_dfa(automata_finito: AutomataFinito):
 
+def genera_dfa(automata_finito: AutomataFinito):
     # Creamos la cola y añadimos el primer estado
     cola_procesamiento = [automata_finito.estado_inicial]
 
@@ -634,17 +641,18 @@ def genera_dfa(automata_finito: AutomataFinito):
                                                                                 automata_finito.estados_finales,
                                                                                 cola_procesamiento)
 
-
     # Traducimos los nombres y creamos el estado muerto
-    [nueva_tabla_transiciones, nuevos_estados_finales, nuevo_estado_inicial] = generar_traduccion(nueva_tabla_transiciones,
-                                                                            automata_finito.alfabeto,
-                                                                            nuevos_estados_finales,
-                                                                            automata_finito.estado_inicial)
+    [nueva_tabla_transiciones, nuevos_estados_finales, nuevo_estado_inicial] = generar_traduccion(
+        nueva_tabla_transiciones,
+        automata_finito.alfabeto,
+        nuevos_estados_finales,
+        automata_finito.estado_inicial)
 
     return AutomataFinito(nueva_tabla_transiciones, automata_finito.alfabeto, nuevo_estado_inicial,
                           nuevos_estados_finales)
 
-def guarda_dfa(automata_finito:AutomataFinito, archivo):
+
+def guarda_dfa(automata_finito: AutomataFinito, archivo):
     with open(archivo, 'w') as f:
 
         # Escribimos la cabecera del archivo
@@ -680,11 +688,12 @@ def guarda_dfa(automata_finito:AutomataFinito, archivo):
             msg += '\n'
 
             f.write(msg)
+
+
 # -----------------------------------
 
 # --- Minimización DFA ---
 def unir_estados_sinonimos(matriz):
-
     n = matriz.shape[0]
 
     particion = Particion(n)
@@ -695,8 +704,8 @@ def unir_estados_sinonimos(matriz):
 
     return particion
 
-def obtener_listado_sinonimos(particion, n):
 
+def obtener_listado_sinonimos(particion, n):
     sinonimos = {}
 
     for i in range(n):
@@ -709,8 +718,8 @@ def obtener_listado_sinonimos(particion, n):
 
     return [sinonimos[x] for x in sinonimos.keys()]
 
-def traducir_sinonimos(listado_sinonimo, automata_finito):
 
+def traducir_sinonimos(listado_sinonimo, automata_finito):
     traduccion = {}
     q_actual = 0
 
@@ -731,7 +740,7 @@ def traducir_sinonimos(listado_sinonimo, automata_finito):
         else:
             for composicion in estado:
                 traduccion['q{}'.format(composicion)] = 'q{}'.format(q_actual)
-            q_actual+=1
+            q_actual += 1
 
     # Generamos la nueva tabla de transiciones a partir de las traducciones
     # y la antigua tabla de transiciones
@@ -742,7 +751,8 @@ def traducir_sinonimos(listado_sinonimo, automata_finito):
             nueva_tabla_transiciones[estado_traducido] = {}
 
         for simbolo in automata_finito.alfabeto:
-            nueva_tabla_transiciones[estado_traducido][simbolo] = traduccion[automata_finito.tabla_transiciones[estado][simbolo]]
+            nueva_tabla_transiciones[estado_traducido][simbolo] = traduccion[
+                automata_finito.tabla_transiciones[estado][simbolo]]
 
     # Traducimos el listado de estados finales
     for estado_final in automata_finito.estados_finales:
@@ -752,7 +762,9 @@ def traducir_sinonimos(listado_sinonimo, automata_finito):
     # Traducimos el estado inicial
     nuevo_estado_inicial = traduccion[automata_finito.estado_inicial]
 
-    return AutomataFinito(nueva_tabla_transiciones, automata_finito.alfabeto, nuevo_estado_inicial, nuevos_estados_finales)
+    return AutomataFinito(nueva_tabla_transiciones, automata_finito.alfabeto, nuevo_estado_inicial,
+                          nuevos_estados_finales)
+
 
 def minimiza_dfa(automata_finito: AutomataFinito):
     tabla_transicion = automata_finito.tabla_transiciones
@@ -809,10 +821,12 @@ def minimiza_dfa(automata_finito: AutomataFinito):
 
     return traducir_sinonimos(listado_sinonimos, automata_finito)
 
+
 def componer_estado_multiplicacion(q1, q2):
     return q1 + '_' + q2[1:]
 
-def multiplica_dfa(dfa1: AutomataFinito, dfa2: AutomataFinito, renombrar_estados = False):
+
+def multiplica_dfa(dfa1: AutomataFinito, dfa2: AutomataFinito, renombrar_estados=False):
     """
     Calcula un nuevo DFA a partir del producto de otros dos DFA.
     Ambos tiene que tener el mismo alfabeto.
@@ -843,9 +857,8 @@ def multiplica_dfa(dfa1: AutomataFinito, dfa2: AutomataFinito, renombrar_estados
                 # Creamos el nuevo estado
                 nuevo_estado = componer_estado_multiplicacion(estado_dfa1, estado_dfa2)
 
-                # El nuevo estado será final si y solo si, uno de los estados que lo compone es final
-                if (estado_dfa1 in estados_finales_dfa1 and estado_dfa2 not in estados_finales_dfa2) or \
-                    (estado_dfa2 in estados_finales_dfa2 and estado_dfa1 not in estados_finales_dfa1):
+                # El nuevo estado será final si y solo si, ambos estados que lo compone es final
+                if estado_dfa1 in estados_finales_dfa1 and estado_dfa2 in estados_finales_dfa2:
                     nuevos_estados_finales.add(nuevo_estado)
 
                 # El nuevo estado inicial será la combinación de los estados iniciales de ambos DFA's
@@ -853,7 +866,8 @@ def multiplica_dfa(dfa1: AutomataFinito, dfa2: AutomataFinito, renombrar_estados
                     nuevo_estado_inicial = nuevo_estado
 
                 # Vemos al siguiente estado al que apuntarían
-                siguiente_estado = componer_estado_multiplicacion(dfa1.tabla_transiciones[estado_dfa1][simbolo], dfa2.tabla_transiciones[estado_dfa2][simbolo])
+                siguiente_estado = componer_estado_multiplicacion(dfa1.tabla_transiciones[estado_dfa1][simbolo],
+                                                                  dfa2.tabla_transiciones[estado_dfa2][simbolo])
 
                 # Inicializamos el nuevo estado compuesto en la tabla de transiciones
                 if nuevo_estado not in nueva_tabla_transiciones:
@@ -863,9 +877,12 @@ def multiplica_dfa(dfa1: AutomataFinito, dfa2: AutomataFinito, renombrar_estados
 
     # Renombramos los estados
     if renombrar_estados:
-        [nueva_tabla_transiciones, nuevos_estados_finales, nuevo_estado_inicial] = generar_traduccion(nueva_tabla_transiciones, alfabeto, nuevos_estados_finales, nuevo_estado_inicial)
+        [nueva_tabla_transiciones, nuevos_estados_finales, nuevo_estado_inicial] = generar_traduccion(
+            nueva_tabla_transiciones, alfabeto, nuevos_estados_finales, nuevo_estado_inicial)
 
     return AutomataFinito(nueva_tabla_transiciones, alfabeto, nuevo_estado_inicial, nuevos_estados_finales)
+
+
 # ------------------------
 
 # --- Testing ---
@@ -926,6 +943,7 @@ def test_nfa_2_dfa():
     assert num_estados_correcto == len(dfa_mio.tabla_transiciones.keys())
     assert num_estados_finales_correcto == len(dfa_mio.estados_finales)
 
+
 def test_minimiza_dfa():
     estado_inicial = 'q0'
     estados_finales = {'q4', 'q5', 'q6'}
@@ -965,18 +983,18 @@ def test_minimiza_dfa():
 
     dfa_minimizado = minimiza_dfa(dfa)
 
-def test_producto_dfas():
 
+def test_producto_dfas():
     alfabeto = ['0', '1']
 
     estado_inicial_1 = 'q0'
     estados_finales_1 = {'q1'}
     tabla_transiciones_1 = {
-        'q0': {             # Estado A del DFA de superior
+        'q0': {  # Estado A del DFA de superior
             '0': 'q0',
             '1': 'q1'
         },
-        'q1': {             # Estado B del DFA de superior
+        'q1': {  # Estado B del DFA de superior
             '0': 'q0',
             '1': 'q0'
         }
@@ -1000,9 +1018,12 @@ def test_producto_dfas():
 
     dfa_producto = multiplica_dfa(dfa_1, dfa_2, True)
 
-    tabla_transiciones_final = {'q0': {'0': 'q1', '1': 'q2'}, 'q1': {'0': 'q1', '1': 'q2'}, 'q2': {'0': 'q1', '1': 'q0'}}
+    tabla_transiciones_final = {'q0': {'0': 'q1', '1': 'q2'}, 'q1': {'0': 'q1', '1': 'q2'},
+                                'q2': {'0': 'q1', '1': 'q0'}}
 
-    assert comprueba_igualdad_tabla_transiciones_dfa(tabla_transiciones_final, dfa_producto.tabla_transiciones, alfabeto)
+    assert comprueba_igualdad_tabla_transiciones_dfa(tabla_transiciones_final, dfa_producto.tabla_transiciones,
+                                                     alfabeto)
+
 
 def test_automata_parte_1():
     """
@@ -1040,43 +1061,65 @@ def test_automata_parte_1():
     assert aceptadas == totales_aceptables
     assert denegadas == totales_denegables
 
+
 def test_automata_parte_2():
     """
     Comprueba que el segundo autómata reconozca correctamente las cadenas que empiecen por AT o TA
     """
 
-    [tabla_transiciones, alfabeto, estado_inicial, estados_finales] = lee_dfa_de_archivo(ARCHIVO_INICIAL_DFA)
-    dfa = AutomataFinito(tabla_transiciones, alfabeto, estado_inicial, estados_finales)
-    dfa_minimizado = minimiza_dfa(dfa)
+    alfabeto = ['0', '1']
 
-    from pythomata import SimpleDFA
-    dfa_test = SimpleDFA(set(dfa_minimizado.tabla_transiciones.keys()), dfa_minimizado.alfabeto,
-                         dfa_minimizado.estado_inicial, dfa_minimizado.estados_finales,
-                         dfa_minimizado.tabla_transiciones)
+    estado_inicial_primero = 'q0'
+    estados_finales_primero = {'q1'}
+    tabla_transiciones_primero = {
+        'q0': {
+            '0': 'q0',
+            '1': 'q1'
+        },
+        'q1': {
+            '0': 'q0',
+            '1': 'q0'
+        }
+    }
 
-    aceptadas = 0
-    totales_aceptables = 0
-    with open(ARCHIVO_TEST_ACEPTADAS_AUTOMATA_2, 'r') as f:
-        palabras = f.read().splitlines()
-    for palabra in palabras:
-        totales_aceptables += 1
-        if dfa_test.accepts(palabra):
-            aceptadas += 1
+    estado_inicial_segundo = 'q2'
+    estados_finales_segundo = {'q2'}
+    tabla_transiciones_segundo = {
+        'q2': {
+            '0': 'q3',
+            '1': 'q2'
+        },
+        'q3': {
+            '0': 'q3',
+            '1': 'q2'
+        }
+    }
 
-    denegadas = 0
-    totales_denegables = 0
-    with open(ARCHIVO_TEST_DENEGADAS_AUTOMATA_2, 'r') as f:
-        palabras = f.read().splitlines()
-    for palabra in palabras:
-        totales_denegables += 1
-        if not dfa_test.accepts(palabra):
-            denegadas += 1
+    dfa_primero = AutomataFinito(tabla_transiciones_primero, alfabeto, estado_inicial_primero, estados_finales_primero)
+    dfa_segundo = AutomataFinito(tabla_transiciones_segundo, alfabeto, estado_inicial_segundo, estados_finales_segundo)
 
-    print('Habia un total de ' + str(totales_aceptables) + ' que aceptar y hemos aceptado ' + str(aceptadas))
-    print('Habia un total de ' + str(totales_denegables) + ' que denegar y hemos denegado ' + str(denegadas))
+    dfa_producto = multiplica_dfa(dfa_primero, dfa_segundo, True)
 
-    assert aceptadas == totales_aceptables
-    assert denegadas == totales_denegables
+    estado_inicial_bueno = 'q0'
+    estados_finales_bueno = {'q2'}
+    tabla_transiciones_bueno = {
+        'q0': {
+            '0': 'q1',
+            '1': 'q2'
+        },
+        'q1': {
+            '0': 'q1',
+            '1': 'q2'
+        },
+        'q2': {
+            '0': 'q1',
+            '1': 'q0'
+        }
+    }
+
+    assert dfa_producto.estado_inicial == estado_inicial_bueno
+    assert estados_finales_bueno == dfa_producto.estados_finales
+    assert comprueba_igualdad_tabla_transiciones_dfa(tabla_transiciones_bueno, dfa_producto.tabla_transiciones, alfabeto)
 
 def test_automata_parte_3():
     """
@@ -1119,10 +1162,45 @@ def test_automata_parte_3():
     assert aceptadas == totales_aceptables
     assert denegadas == totales_denegables
 
+
+def test_automata_final():
+    dfa_eps_nfa = obtiene_dfa_de_eps_nfa(ARCHIVO_INICIAL_EPS_NFA)
+
+    dfa_dfa = obtiene_dfa_de_dfa(ARCHIVO_INICIAL_DFA)
+
+    dfa_final_minimizado = multiplica_dfa(dfa_eps_nfa, dfa_dfa, True)
+
+    from pythomata import SimpleDFA
+
+    dfa = SimpleDFA(
+        set(dfa_final_minimizado.tabla_transiciones.keys()),
+        dfa_final_minimizado.alfabeto,
+        dfa_final_minimizado.estado_inicial,
+        dfa_final_minimizado.estados_finales,
+        dfa_final_minimizado.tabla_transiciones)
+
+    print('Comenzando el test...')
+
+    totales = 0
+    encontradas = 0
+    aceptadas = []
+    with open("dataset.csv", 'r') as f:
+        for palabra in f:
+            palabra = palabra.replace('\n', '')
+
+            totales += 1
+
+            if dfa.accepts(palabra):
+                encontradas += 1
+                aceptadas.append(palabra)
+
+    print('{}'.format(encontradas) + ' cadenas han sido aceptadas de {}'.format(totales) + ' posibles')
+    print(aceptadas)
+
+    print(dfa_final_minimizado)
 # ---------------
 
 def obtiene_dfa_de_dfa(archivo):
-
     [tabla_transiciones, alfabeto, estado_inicial, estados_finales] = lee_dfa_de_archivo(ARCHIVO_INICIAL_DFA)
     dfa = AutomataFinito(tabla_transiciones, alfabeto, estado_inicial, estados_finales)
     dfa_minimizado = minimiza_dfa(dfa)
@@ -1131,8 +1209,8 @@ def obtiene_dfa_de_dfa(archivo):
 
     return dfa_minimizado
 
-def obtiene_dfa_de_eps_nfa(archivo):
 
+def obtiene_dfa_de_eps_nfa(archivo):
     # Lee el archivo con la tabla de eps-transiciones y crea el eps-nfa
     [tabla_transiciones, alfabeto, estado_inicial, estados_finales] = lee_eps_nfa_de_archivo(archivo)
     eps_nfa = AutomataFinito(tabla_transiciones, alfabeto, estado_inicial, estados_finales)
@@ -1154,6 +1232,7 @@ def obtiene_dfa_de_eps_nfa(archivo):
     guarda_dfa(dfa_minimizado, ARCHIVO_DFA_MINIMIZADO_DE_EPS_NFA)
 
     return dfa_minimizado
+
 
 def guarda_automata_finito(automata_finito, archivo):
     """
@@ -1209,20 +1288,23 @@ if __name__ == "__main__":
         pip install pythomata
     """
 
-
-
     # Autómata para la cadena que contenta ...TGGGCGTTT...
-    #test_automata_parte_1()
+    # test_automata_parte_1()
 
     # Autómata para cadenas que empicen por AT ó TA
     #test_automata_parte_2()
 
     # Autómata final
-    #test_automata_parte_3()
+    # test_automata_parte_3()
+
+    # Autómata con el dataset del campus
+    test_automata_final()
 
     # Generamos el autómata final
+    """
     dfa_eps_nfa = obtiene_dfa_de_eps_nfa(ARCHIVO_INICIAL_EPS_NFA)
     dfa_dfa = obtiene_dfa_de_dfa(ARCHIVO_INICIAL_DFA)
     dfa_final = multiplica_dfa(dfa_eps_nfa, dfa_dfa, renombrar_estados=True)
     dfa_final_minimizado = minimiza_dfa(dfa_final)
     guarda_dfa(dfa_final_minimizado, ARCHIVO_DFA_FINAL)
+    """
