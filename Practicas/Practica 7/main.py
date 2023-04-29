@@ -105,7 +105,7 @@ class TurtleParser(Parser):
     def __init__(self):
         self.vars = {}
         self.turtle = turtle.Turtle()
-        self.turtle.speed(1)
+        self.turtle.speed(7)
         self.ordenes = []
         self.nodes = []
 
@@ -166,6 +166,8 @@ class TurtleParser(Parser):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+
+    """
     ejemplo1 = "BEGIN" \
                "FORWARD 100;" \
                "BACK 40;" \
@@ -192,11 +194,20 @@ if __name__ == '__main__':
                "]" \
                "END"
 
-    ejemplos = [ejemplo1, ejemplo2, ejemplo3]
+    ejemplos = [ejemplo1, ejemplo2, ejemplo3, ejemplo4]
 
     lexer = TurtleLexer()
     parser = TurtleParser()
 
     print(parser.parse(lexer.tokenize(ejemplo3)))
+    """
 
-    time.sleep(3)
+    with open('ejemplo.txt', 'r') as f:
+        text = f.read()
+
+    lexer = TurtleLexer()
+    parser = TurtleParser()
+
+    print('La ruta ha sido: {}'.format(parser.parse(lexer.tokenize(text))))
+
+    time.sleep(5)
