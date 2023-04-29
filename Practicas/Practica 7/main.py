@@ -117,18 +117,14 @@ class TurtleParser(Parser):
     @_('BEGIN A END')
     def S(self, p):
 
-        for node in self.nodes:
-            node.execute()
-
         for instr in p.A:
+            instr.execute()
             self.ordenes.append(instr.to_string())
 
         return self.ordenes
 
     @_('F A')
     def A(self, p):
-
-        self.nodes.append(p.F)
 
         res = [p.F]
 
@@ -182,8 +178,8 @@ if __name__ == '__main__':
                "END"
 
     ejemplo3 = "BEGIN" \
-               "RIGHT 15;" \
-               "BACK 15;" \
+               "RIGHT 30;" \
+               "FORWARD 50;" \
                "REPEAT 20 [" \
                "FORWARD 40;" \
                "LEFT 15;]" \
