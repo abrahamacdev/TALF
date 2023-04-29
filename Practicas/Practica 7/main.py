@@ -149,11 +149,19 @@ class TurtleParser(Parser):
 
     @_('LEFT N ";"')
     def F(self, p):
-        return UnaryNode('LEFT', p.N, self.turtle)
+
+        if p.N.execute() <= 360:
+            return UnaryNode('LEFT', p.N, self.turtle)
+
+        raise Exception("angle exceed limit (360)")
 
     @_('RIGHT N ";"')
     def F(self, p):
-        return UnaryNode('RIGHT', p.N, self.turtle)
+
+        if p.N.execute() <= 360:
+            return UnaryNode('RIGHT', p.N, self.turtle)
+
+        raise Exception("angle exceed limit (360)")
 
     @_('REPEAT N "[" A "]"')
     def F(self, p):
