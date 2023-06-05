@@ -1,0 +1,30 @@
+
+[X, y] = read_csv('Iris')
+[xtrn, ytrn, xtst, ytst] = split(X, y)
+model = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'),  Dense(3, 'softmax') ]
+compile(model, 'sgd', 'categorical_crossentropy', ['accuracy'])
+fit(model, xtrn, ytrn, 128)
+x_pred = predict(model, xtst)
+visualize(model)
+
+#
+
+[X,y] = read_csv('Wine')
+X_norm = normalize(X)
+y_norm = normalize(y)
+[x_trn, y_trn, x_tst, x_trn] = split(X_norm, y_norm)
+
+#
+
+ann = Sequential[
+    Dense(8, 'relu'),
+    Dense(16, 'relu'),
+    Dense(8, 'softmax')
+]
+
+#
+
+compile(ann)
+fit(ann, x_trn, y_trn, 100)
+predict(ann, x_tst)
+visualize(ann)

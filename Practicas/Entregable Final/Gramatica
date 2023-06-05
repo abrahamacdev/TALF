@@ -1,0 +1,53 @@
+S -> Inst
+
+Inst -> Asig Inst | Ejec Inst | eps
+Asig -> VARIABLE '=' Ejec | '[' Vars_1 ']' '=' Ejec
+Vars_1 -> VARIABLE ',' Vars_2
+Vars_2 -> VARIABLE ',' Vars_2
+Vars_2 -> VARIABLE
+
+Ejec -> Read | Norm | Split | Sequential | Compile | Fit | Predict | Ensemble | Visualize
+
+# Metodos pre-redes
+Read -> READ '(' '\'' VARIABLE '\'' ')
+Norm -> NORM '(' VARIABLE ')'
+Split -> SPLIT '(' VARIABLE ',' VARIABLE )'
+
+# Redes
+Sequential -> SEQUENTIAL '[' Denses ']'
+Denses -> Dense
+Denses -> Dense ',' Denses
+
+Dense -> DENSE '(' INT ',' ACTIVATION ')'
+
+Compile -> COMPILE '(' VARIABLE ',' OPTIMIZER ',' LOSS ',' '[' Metrics ']' ')'
+Metrics -> METRIC
+Metrics -> METRIC ',' Metrics
+
+Fit -> FIT '(' VARIABLE ',' VARIABLE ',' VARIABLE ',' INT ')'
+
+Predict -> PREDICT '(' VARIABLE ',' VARIABLE ')'
+
+Visualize -> VISUALIZE '(' VARIABLE ')'
+
+# Tokens (ya están directamente incluidos en el lexer)
+VARIABLE -> r'[a-zA-Z_]+[0-9]*[a-zA-Z_]*'
+DATASET -> r'Iris|iris|Image|image|Pima|pima|Wine|wine'
+INT -> r'[0-9]+'
+FLOAT -> r'[0-9]+\.[0-9]+)'
+
+ACTIVATION -> r'relu|softmax'
+OPTIMIZER -> r'adam|sgd'
+LOSS -> r'categorical_crossentropy'
+METRIC -> r'accuracy'
+
+SEQUENTIAL = r'Sequential'
+DENSE = r'Dense'
+COMPILE = r'compile'
+FIT = r'fit'
+PREDICT = r'predict'
+
+BAGGING = r'Bagging'
+STACKING = r'Stacking'
+
+VISUALIZE = r'visualize'
