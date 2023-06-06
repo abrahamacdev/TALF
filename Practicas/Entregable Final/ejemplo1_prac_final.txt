@@ -7,10 +7,19 @@ compile(model1, 'sgd', 'categorical_crossentropy', ['accuracy'])
 model2 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(3, 'softmax')]
 compile(model2, 'sgd', 'categorical_crossentropy', ['accuracy'])
 
-bagging = Bagging([model1, model2], 'mode')
+model3 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(24, 'relu'), Dense(3, 'softmax')]
+compile(model3, 'sgd', 'categorical_crossentropy', ['accuracy'])
 
-fit(bagging, xtrn, ytrn, 128)
-#
+# Unifica los modelos
+bagging = Bagging([model1, model2, model3], 'mode')
+
+# Los entrena
+fit(bagging, xtrn, ytrn, 32)
+
+# Hace la prediccion
+x_pred = predict(bagging, xtst)
+
+@
 
 [X, y] = read_csv('Iris')
 X = normalize(X)
@@ -21,14 +30,14 @@ fit(model, xtrn, ytrn, 128)
 x_pred = predict(model, xtst)
 visualize(model)
 
-#
+@
 
 [X,y] = read_csv('Wine')
 X_norm = normalize(X)
 y_norm = normalize(y)
 [x_trn, y_trn, x_tst, x_trn] = split(X_norm, y_norm)
 
-#
+@
 
 ann = Sequential[
     Dense(8, 'relu'),
@@ -36,7 +45,7 @@ ann = Sequential[
     Dense(8, 'softmax')
 ]
 
-#
+@
 
 compile(ann)
 fit(ann, x_trn, y_trn, 100)

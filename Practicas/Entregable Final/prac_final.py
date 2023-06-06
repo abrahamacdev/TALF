@@ -10,6 +10,7 @@ from typing import List
 from tensorflow import keras
 from keras.layers import Dense
 from ann_visualizer.visualize import ann_viz
+from scipy import stats as st
 
 
 class ENSEMBLE_MODES(enum.Enum):
@@ -50,6 +51,27 @@ class BaggingModel(EnsembleModel):
 
     def predict(self, X):
         predictions = EnsembleModel.predict(self, X)
+
+        final_predictions = np.zeros(predictions[0].shape[0], dtype=np.float)
+
+        if self.mode == ENSEMBLE_MODES.MODE:
+
+            intermediate_arr = np.zeros((predictions[0].shape[0], len(predictions)), dtype=np.float)
+
+            # Calculamos la prediccion (clase) por modelo y la almacenamos temporalmente
+            colIndx = 0
+            for prediction in predictions:
+                intermediate_arr[:, colIndx] = np.argmax(prediction, axis=1) + 1
+                colIndx += 1
+
+            final_predictions = st.mode(intermediate_arr, 1)
+
+            print(predictions)
+            print(intermediate_arr)
+            print(final_predictions)
+
+
+        #print(predictions)
 
         return predictions
 
@@ -175,7 +197,8 @@ class KerasLexer(Lexer):
     VARIABLE = r'[a-zA-Z][a-zA-Z0-9]*'
 
     # String containing ignored characters
-    ignore = ' \t'
+    ignore_comment = r'\#.*'
+    ignore = '\t'
     ignore_newline = r'\n+'
 
     def INT(self, t):
@@ -455,7 +478,7 @@ if __name__ == '__main__':
     texts = []
     with open('ejemplo1_prac_final.txt', 'r') as f:
         text = f.read()
-        texts = text.split("#")
+        texts = text.split("@")
 
     lexer = KerasLexer()
     parser = KerasParser()
