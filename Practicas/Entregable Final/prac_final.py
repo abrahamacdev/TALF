@@ -12,60 +12,46 @@ from keras.layers import Dense
 from ann_visualizer.visualize import ann_viz
 
 
-class KerasLexer(Lexer):
-    tokens = {READ, DATASET, NORM, SPLIT, SEQUENTIAL, DENSE, COMPILE, FIT, PREDICT,
-              BAGGING, STACKING, VISUALIZE, INT, FLOAT, VARIABLE,
-              ACTIVATION, OPTIMIZER, LOSS, METRIC}
+class ENSEMBLE_MODES(enum.Enum):
+    MODE = 1
+    MEAN = 2
 
-    literals = {'\'', '(', ')', '[', ']', '=', ','}
 
-    INT = r'[0-9]+'
-    FLOAT = r'[0-9]+\.[0-9]+'
+class EnsembleModel:
 
-    READ = r'read_csv'
-    DATASET = r'Iris|iris|Image|image|Pima|pima|Wine|wine'
+    def __init__(self, models):
+        self.models = models
 
-    NORM = r'normalize'
-    SPLIT = r'split'
+    def fit(self, X, y, epochs):
+        for model in self.models:
+            model.fit(X, y, epochs=epochs)
 
-    SEQUENTIAL = r'Sequential'
-    DENSE = r'Dense'
-    COMPILE = r'compile'
-    FIT = r'fit'
-    PREDICT = r'predict'
+    def predict(self, X):
+        predictions = []
+        for model in self.models:
+            predictions.append(model.predict(X))
+        return predictions
 
-    BAGGING = r'Bagging'
-    STACKING = r'Stacking'
+    def get_models(self):
+        return self.models
 
-    ACTIVATION = r'relu|softmax'
-    OPTIMIZER = r'adam|sgd'
-    LOSS = r'categorical_crossentropy'
-    METRIC = r'accuracy'
+    def add_model(self, model):
+        return self.models.append(model)
 
-    VISUALIZE = r'visualize'
 
-    VARIABLE = r'[a-zA-Z_]+[0-9]*[a-zA-Z_]*'
+class BaggingModel(EnsembleModel):
 
-    # String containing ignored characters
-    ignore = ' \t'
-    ignore_newline = r'\n+'
+    def __init__(self, models, mode: ENSEMBLE_MODES):
+        super().__init__(models)
+        self.mode = mode
 
-    def INT(self, t):
-        t.value = int(t.value)
-        return t
+    def get_mode(self):
+        return self.mode
 
-    def FLOAT(self, t):
-        t.value = float(t.value)
-        return t
+    def predict(self, X):
+        predictions = EnsembleModel.predict(self, X)
 
-    # Line number tracking
-    @_(r'\n+')
-    def ignore_newline(self, t):
-        self.lineno += t.value.count('\n')
-
-    def error(self, t):
-        # print('Line %d: Bad character %r' % (self.lineno, t.value[0]))
-        self.index += 1
+        return predictions
 
 
 class Node:
@@ -149,6 +135,65 @@ class AssignNode(Node):
 
         elif op_type is OP_TYPE.UNKNOWN:
             return {}
+
+
+class KerasLexer(Lexer):
+    tokens = {READ, DATASET, NORM, SPLIT, SEQUENTIAL, DENSE, COMPILE, FIT, PREDICT,
+              BAGGING, STACKING, VISUALIZE, INT, FLOAT, VARIABLE,
+              ACTIVATION, OPTIMIZER, LOSS, METRIC, MEAN, MODE}
+
+    literals = {'\'', '(', ')', '[', ']', '=', ','}
+
+    INT = r'[0-9]+'
+    FLOAT = r'[0-9]+\.[0-9]+'
+
+    READ = r'read_csv'
+    DATASET = r'Iris|iris|Image|image|Pima|pima|Wine|wine'
+
+    NORM = r'normalize'
+    SPLIT = r'split'
+
+    SEQUENTIAL = r'Sequential'
+    DENSE = r'Dense'
+    COMPILE = r'compile'
+    FIT = r'fit'
+    PREDICT = r'predict'
+
+    BAGGING = r'Bagging'
+    STACKING = r'Stacking'
+
+    ACTIVATION = r'relu|softmax'
+    OPTIMIZER = r'adam|sgd'
+    LOSS = r'categorical_crossentropy'
+    METRIC = r'accuracy'
+
+    VISUALIZE = r'visualize'
+
+    MEAN = r'((?<![a-zA-Z0-9])(mean|Mean)(?![a-zA-Z0-9]))'
+    MODE = r'((?<![a-zA-Z0-9])(mode|Mode)(?![a-zA-Z0-9]))'
+
+    VARIABLE = r'[a-zA-Z][a-zA-Z0-9]*'
+
+    # String containing ignored characters
+    ignore = ' \t'
+    ignore_newline = r'\n+'
+
+    def INT(self, t):
+        t.value = int(t.value)
+        return t
+
+    def FLOAT(self, t):
+        t.value = float(t.value)
+        return t
+
+    # Line number tracking
+    @_(r'\n+')
+    def ignore_newline(self, t):
+        self.lineno += t.value.count('\n')
+
+    def error(self, t):
+        # print('Line %d: Bad character %r' % (self.lineno, t.value[0]))
+        self.index += 1
 
 
 class KerasParser(Parser):
@@ -243,17 +288,23 @@ class KerasParser(Parser):
         print('Fitting...')
         return p.Fit
 
-
     @_('Predict')
     def Ejec(self, p):
         return p.Predict
 
+    @_('Bagging')
+    def Ejec(self, p):
+        return p.Bagging
+
+    """
+    @_('Stacking')
+    def Ejec(self, p):
+        return p.Stacking
+    """
+
     @_('Visualize')
     def Ejec(self, p):
         return p.Visualize
-
-
-
 
     @_('READ "(" "\'" DATASET "\'" ")"')
     def Read(self, p):
@@ -336,7 +387,10 @@ class KerasParser(Parser):
     def Fit(self, p):
 
         # TODO Comprobar si la variable es un modelo o es un Ensemble
-        modelo: keras.Sequential = self.variables[p.VARIABLE0]
+        modelo = self.variables[p.VARIABLE0]
+
+        print(type(modelo))
+
         x_trn = self.variables[p.VARIABLE1]
         y_trn = self.variables[p.VARIABLE2]
         epochs = p.INT
@@ -356,6 +410,34 @@ class KerasParser(Parser):
 
         # Hacemos la prediccions
         return OperationNode(y_pred, OP_TYPE.BASIC)
+
+    @_('BAGGING "(" "[" Vars_2 "]" "," "\'" Bagging_Mode "\'" ")"')
+    def Bagging(self, p):
+
+        args_models_vars = p.Vars_2
+
+        # Metemos todos los modelos en un array
+        models = []
+        for var_name in set(args_models_vars):
+            models.append(self.variables[var_name])
+
+        # Miramos el modo que tendrá el model
+        mode = p.Bagging_Mode
+
+        # Creamos el modelo compuesto
+        return OperationNode(BaggingModel(models, mode), OP_TYPE.BASIC)
+
+    @_('MEAN')
+    def Bagging_Mode(self, p):
+
+        # Creamos el modelo compuesto
+        return ENSEMBLE_MODES.MEAN
+
+    @_('MODE')
+    def Bagging_Mode(self, p):
+
+        # Creamos el modelo compuesto
+        return ENSEMBLE_MODES.MODE
 
     @_('VISUALIZE "(" VARIABLE ")"')
     def Visualize(self, p):
@@ -378,4 +460,13 @@ if __name__ == '__main__':
     lexer = KerasLexer()
     parser = KerasParser()
 
-    parser.parse(lexer.tokenize(texts[0]))
+    indxsPrograma = 0
+
+    print("Programa a interpretar:")
+    print(texts[indxsPrograma])
+    """
+    for token in lexer.tokenize(texts[indxsPrograma]):
+        print('Tipo {} -- Value {}'.format(token.type, token.value))
+    """
+
+    parser.parse(lexer.tokenize(texts[indxsPrograma]))

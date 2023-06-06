@@ -1,5 +1,19 @@
+[X, y] = read_csv('Iris')
+[xtrn, ytrn, xtst, ytst] = split(X, y)
+
+model1 = Sequential[ Dense(8, 'relu'), Dense(3, 'softmax')]
+compile(model1, 'sgd', 'categorical_crossentropy', ['accuracy'])
+
+model2 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(3, 'softmax')]
+compile(model2, 'sgd', 'categorical_crossentropy', ['accuracy'])
+
+bagging = Bagging([model1, model2], 'mode')
+
+fit(bagging, xtrn, ytrn, 128)
+#
 
 [X, y] = read_csv('Iris')
+X = normalize(X)
 [xtrn, ytrn, xtst, ytst] = split(X, y)
 model = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'),  Dense(3, 'softmax') ]
 compile(model, 'sgd', 'categorical_crossentropy', ['accuracy'])

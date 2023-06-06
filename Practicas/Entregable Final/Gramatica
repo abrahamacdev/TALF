@@ -6,7 +6,7 @@ Vars_1 -> VARIABLE ',' Vars_2
 Vars_2 -> VARIABLE ',' Vars_2
 Vars_2 -> VARIABLE
 
-Ejec -> Read | Norm | Split | Sequential | Compile | Fit | Predict | Ensemble | Visualize
+Ejec -> Read | Norm | Split | Sequential | Compile | Fit | Predict | Bagging | Stacking | Visualize
 
 # Metodos pre-redes
 Read -> READ '(' '\'' VARIABLE '\'' ')
@@ -18,7 +18,7 @@ Sequential -> SEQUENTIAL '[' Denses ']'
 Denses -> Dense
 Denses -> Dense ',' Denses
 
-Dense -> DENSE '(' INT ',' ACTIVATION ')'
+Dense -> DENSE '(' INT ',' 'ACTIVATION' ')'
 
 Compile -> COMPILE '(' VARIABLE ',' OPTIMIZER ',' LOSS ',' '[' Metrics ']' ')'
 Metrics -> METRIC
@@ -28,13 +28,26 @@ Fit -> FIT '(' VARIABLE ',' VARIABLE ',' VARIABLE ',' INT ')'
 
 Predict -> PREDICT '(' VARIABLE ',' VARIABLE ')'
 
+Bagging -> BAGGING '[' VARIABLE ',' Vars_2 ',' MODE ']'
+Bagging_Mode -> MEAN | MODE
+
 Visualize -> VISUALIZE '(' VARIABLE ')'
 
+
+
+
+
+
+
+
 # Tokens (ya están directamente incluidos en el lexer)
-VARIABLE -> r'[a-zA-Z_]+[0-9]*[a-zA-Z_]*'
+VARIABLE -> r'[a-zA-Z_][a-zA-Z_0-9]*'
 DATASET -> r'Iris|iris|Image|image|Pima|pima|Wine|wine'
 INT -> r'[0-9]+'
 FLOAT -> r'[0-9]+\.[0-9]+)'
+
+MEAN = r'((?<![a-zA-Z0-9])(mean|Mean)(?![a-zA-Z0-9]))'
+MODE = r'((?<![a-zA-Z0-9])(mode|Mode)(?![a-zA-Z0-9]))'
 
 ACTIVATION -> r'relu|softmax'
 OPTIMIZER -> r'adam|sgd'
