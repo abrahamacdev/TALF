@@ -9,10 +9,10 @@ ann = Sequential[
 
 # Carga la base de datos y divide en conjunto de entrenamiento y testing
 [X,y] = read_csv('Wine')
-[x_trn, y_trn, x_tst, x_trn] = split(X, y)
+[x_trn, y_trn, x_tst, y_tst] = split(X, y)
 
-#print(X)
-#print(x_trn)
+print(X)
+print(x_trn)
 
 @
 

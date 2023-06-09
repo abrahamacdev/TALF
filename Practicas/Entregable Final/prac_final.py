@@ -183,6 +183,7 @@ class AssignNode(Node):
         :return:
         """
         if len(self.vars) == 4:
+
             return {var: value for var, value in zip(self.vars, self.value.execute())}
 
     def __basic_assignment(self):
@@ -315,9 +316,6 @@ class KerasParser(Parser):
     def Asig(self, p):
         vars = p.Vars_1
         assignNode = AssignNode(vars, p.Ejec)
-
-        print(vars)
-        print(p.Ejec)
 
         # Asignamos cada valor a su respectiva variable
         for key, value in assignNode.execute().items():
@@ -557,7 +555,7 @@ def execute_test():
     texts = []
 
     # Carga el archivo de ejemplo
-    with open('ejemplo1_prac_final.txt', 'r') as f:
+    with open('ejemplos.txt', 'r') as f:
         text = f.read()
         texts = text.split("@")
 
