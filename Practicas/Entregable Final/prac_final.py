@@ -52,8 +52,9 @@ class BaggingModel(EnsembleModel):
     def predict(self, X):
         predictions = EnsembleModel.predict(self, X)
 
-        final_predictions = np.zeros(predictions[0].shape[0], dtype=np.float)
+        # final_predictions = np.zeros(predictions[0].shape[0], dtype=np.float)
 
+        # Hay que calcular la moda
         if self.mode == ENSEMBLE_MODES.MODE:
 
             intermediate_arr = np.zeros((predictions[0].shape[0], len(predictions)), dtype=np.float)
@@ -64,16 +65,32 @@ class BaggingModel(EnsembleModel):
                 intermediate_arr[:, colIndx] = np.argmax(prediction, axis=1) + 1
                 colIndx += 1
 
-            final_predictions = st.mode(intermediate_arr, 1)
+            final_predictions = st.mode(intermediate_arr, axis=1, keepdims=True)
 
-            print(predictions)
-            print(intermediate_arr)
-            print(final_predictions)
+            return final_predictions.mode
 
+        # Hay que calcular la media
+        else:
 
-        #print(predictions)
+            # Creamos la matriz intermedia en la que iremos guardando los resultados
+            intermediate_arr = np.stack(predictions)
+            output_dims = predictions[0].shape[1]
 
-        return predictions
+            # Creamos una matriz en la cual cada fila tendrá la media de la probabilidad de cada clase
+            # segun cada predictor.
+            final_predictions = np.zeros(predictions[0].shape, dtype=np.float)
+
+            for i in range(output_dims):
+
+                # Localizamos la columna a traves de todos los canales (profundidades).
+                # profundidad, fila, columna
+                t = intermediate_arr[:,:,i]
+
+                # Calculamos la media para la clase i
+                final_predictions[:, i] = np.mean(t, axis=0)
+
+            # Devolvemos la clase finalmente elegida
+            return np.argmax(final_predictions, axis=1)[0:4]+1
 
 
 class Node:
@@ -194,7 +211,7 @@ class KerasLexer(Lexer):
     MEAN = r'((?<![a-zA-Z0-9])(mean|Mean)(?![a-zA-Z0-9]))'
     MODE = r'((?<![a-zA-Z0-9])(mode|Mode)(?![a-zA-Z0-9]))'
 
-    VARIABLE = r'[a-zA-Z][a-zA-Z0-9]*'
+    VARIABLE = r'[a-zA-Z_][a-zA-Z0-9_]*'
 
     # String containing ignored characters
     ignore_comment = r'\#.*'
@@ -412,8 +429,6 @@ class KerasParser(Parser):
         # TODO Comprobar si la variable es un modelo o es un Ensemble
         modelo = self.variables[p.VARIABLE0]
 
-        print(type(modelo))
-
         x_trn = self.variables[p.VARIABLE1]
         y_trn = self.variables[p.VARIABLE2]
         epochs = p.INT
@@ -487,6 +502,7 @@ if __name__ == '__main__':
 
     print("Programa a interpretar:")
     print(texts[indxsPrograma])
+
     """
     for token in lexer.tokenize(texts[indxsPrograma]):
         print('Tipo {} -- Value {}'.format(token.type, token.value))

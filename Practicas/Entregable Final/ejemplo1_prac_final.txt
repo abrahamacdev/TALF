@@ -7,14 +7,15 @@ compile(model1, 'sgd', 'categorical_crossentropy', ['accuracy'])
 model2 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(3, 'softmax')]
 compile(model2, 'sgd', 'categorical_crossentropy', ['accuracy'])
 
-model3 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(24, 'relu'), Dense(3, 'softmax')]
-compile(model3, 'sgd', 'categorical_crossentropy', ['accuracy'])
+#model3 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(24, 'relu'), Dense(3, 'softmax')]
+#compile(model3, 'sgd', 'categorical_crossentropy', ['accuracy'])
 
 # Unifica los modelos
-bagging = Bagging([model1, model2, model3], 'mode')
+#bagging = Bagging([model1, model2, model3], 'mode')
+bagging = Bagging([model1, model2], 'mean')
 
 # Los entrena
-fit(bagging, xtrn, ytrn, 32)
+fit(bagging, xtrn, ytrn, 16)
 
 # Hace la prediccion
 x_pred = predict(bagging, xtst)
