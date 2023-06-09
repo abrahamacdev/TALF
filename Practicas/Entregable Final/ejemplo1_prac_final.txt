@@ -1,45 +1,4 @@
-[X, y] = read_csv('Iris')
-[xtrn, ytrn, xtst, ytst] = split(X, y)
-
-model1 = Sequential[ Dense(8, 'relu'), Dense(3, 'softmax')]
-compile(model1, 'sgd', 'categorical_crossentropy', ['accuracy'])
-
-model2 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(3, 'softmax')]
-compile(model2, 'sgd', 'categorical_crossentropy', ['accuracy'])
-
-#model3 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(24, 'relu'), Dense(3, 'softmax')]
-#compile(model3, 'sgd', 'categorical_crossentropy', ['accuracy'])
-
-# Unifica los modelos
-#bagging = Bagging([model1, model2, model3], 'mode')
-bagging = Bagging([model1, model2], 'mean')
-
-# Los entrena
-fit(bagging, xtrn, ytrn, 16)
-
-# Hace la prediccion
-x_pred = predict(bagging, xtst)
-
-@
-
-[X, y] = read_csv('Iris')
-X = normalize(X)
-[xtrn, ytrn, xtst, ytst] = split(X, y)
-model = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'),  Dense(3, 'softmax') ]
-compile(model, 'sgd', 'categorical_crossentropy', ['accuracy'])
-fit(model, xtrn, ytrn, 128)
-x_pred = predict(model, xtst)
-visualize(model)
-
-@
-
-[X,y] = read_csv('Wine')
-X_norm = normalize(X)
-y_norm = normalize(y)
-[x_trn, y_trn, x_tst, x_trn] = split(X_norm, y_norm)
-
-@
-
+# Creacion de red neuronal simple
 ann = Sequential[
     Dense(8, 'relu'),
     Dense(16, 'relu'),
@@ -48,7 +7,93 @@ ann = Sequential[
 
 @
 
-compile(ann)
-fit(ann, x_trn, y_trn, 100)
-predict(ann, x_tst)
-visualize(ann)
+# Carga la base de datos y divide en conjunto de entrenamiento y testing
+[X,y] = read_csv('Wine')
+[x_trn, y_trn, x_tst, x_trn] = split(X, y)
+
+#print(X)
+#print(x_trn)
+
+@
+
+# Carga la base de datos y normaliza las variables independientes
+[X, y] = read_csv('Iris')
+
+print(X)
+
+X = normalize(X)
+
+print(X)
+
+@
+
+# Carga la base de datos y divide en conjunto de entrenamiento y testing
+[X, y] = read_csv('Iris')
+[xtrn, ytrn, xtst, ytst] = split(X, y)
+
+# Crea un modelo simple
+model = Sequential[ Dense(8, 'relu'), Dense(3, 'softmax')]
+compile(model, 'sgd', 'categorical_crossentropy', ['accuracy'])
+
+# Entrena el modelo
+fit(model, xtrn, ytrn, 64)
+
+# Hace la prediccion
+x_pred = predict(model, xtst)
+
+# Muestra una imagen de la red neuronal creada
+visualize(model)
+
+# Muestra las predicciones
+print(x_pred)
+
+@
+
+[X, y] = read_csv('Iris')
+X = normalize(X)
+[xtrn, ytrn, xtst, ytst] = split(X, y)
+
+# Creamos y compilamos los modelos simples
+model1 = Sequential[ Dense(8, 'relu'), Dense(3, 'softmax')]
+compile(model1, 'sgd', 'categorical_crossentropy', ['accuracy'])
+
+model2 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(3, 'softmax')]
+compile(model2, 'sgd', 'categorical_crossentropy', ['accuracy'])
+
+model3 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(24, 'relu'), Dense(3, 'softmax')]
+compile(model3, 'sgd', 'categorical_crossentropy', ['accuracy'])
+
+# Ejemplo de bagging
+#bagging_mode = Bagging([model1, model2, model3], 'mode')
+bagging_mean = Bagging([model1, model2, model3], 'mean')
+
+@
+
+[X, y] = read_csv('Iris')
+X = normalize(X)
+[xtrn, ytrn, xtst, ytst] = split(X, y)
+
+# Creamos y compilamos los modelos simples
+model1 = Sequential[ Dense(8, 'relu'), Dense(3, 'softmax')]
+compile(model1, 'sgd', 'categorical_crossentropy', ['accuracy'])
+
+model2 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(3, 'softmax')]
+compile(model2, 'sgd', 'categorical_crossentropy', ['accuracy'])
+
+model3 = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(24, 'relu'), Dense(3, 'softmax')]
+compile(model3, 'sgd', 'categorical_crossentropy', ['accuracy'])
+
+model4_stacking = Sequential[ Dense(8, 'relu'), Dense(16, 'relu'), Dense(3, 'softmax')]
+compile(model4_stacking, 'sgd', 'categorical_crossentropy', ['accuracy'])
+
+# Creamos el modelo final mediante Stacking
+stacking = Stacking([model1, model2, model3], model4_stacking)
+
+# Entrena el modelo final
+fit(stacking, xtrn, ytrn, 64)
+
+# Hace la prediccion
+x_pred = predict(stacking, xtst)
+
+# Muestra las predicciones
+print(x_pred)

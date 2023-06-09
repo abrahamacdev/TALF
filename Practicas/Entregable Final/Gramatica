@@ -6,7 +6,7 @@ Vars_1 -> VARIABLE ',' Vars_2
 Vars_2 -> VARIABLE ',' Vars_2
 Vars_2 -> VARIABLE
 
-Ejec -> Read | Norm | Split | Sequential | Compile | Fit | Predict | Bagging | Stacking | Visualize
+Ejec -> Read | Norm | Split | Sequential | Compile | Fit | Predict | Bagging | Stacking | Visualize | Print
 
 # Metodos pre-redes
 Read -> READ '(' '\'' VARIABLE '\'' ')
@@ -28,11 +28,17 @@ Fit -> FIT '(' VARIABLE ',' VARIABLE ',' VARIABLE ',' INT ')'
 
 Predict -> PREDICT '(' VARIABLE ',' VARIABLE ')'
 
-Bagging -> BAGGING '[' VARIABLE ',' Vars_2 ',' MODE ']'
+# Ensemble
+Bagging -> BAGGING '(' '[' Vars_1 ']' ','  'Bagging_Mode' ')'
 Bagging_Mode -> MEAN | MODE
 
+Stacking -> STACKING '(' '[' Vars_1 ']' ',' VARIABLE ')'
+
+# Visualizar redes
 Visualize -> VISUALIZE '(' VARIABLE ')'
 
+# Print
+Print -> PRINT '(' VARIABLE ')'
 
 
 
@@ -64,3 +70,5 @@ BAGGING = r'Bagging'
 STACKING = r'Stacking'
 
 VISUALIZE = r'visualize'
+
+PRINT = r'print'

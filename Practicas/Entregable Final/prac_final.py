@@ -81,16 +81,49 @@ class BaggingModel(EnsembleModel):
             final_predictions = np.zeros(predictions[0].shape, dtype=np.float)
 
             for i in range(output_dims):
-
                 # Localizamos la columna a traves de todos los canales (profundidades).
                 # profundidad, fila, columna
-                t = intermediate_arr[:,:,i]
+                t = intermediate_arr[:, :, i]
 
                 # Calculamos la media para la clase i
                 final_predictions[:, i] = np.mean(t, axis=0)
 
             # Devolvemos la clase finalmente elegida
-            return np.argmax(final_predictions, axis=1)[0:4]+1
+            # return np.argmax(final_predictions, axis=1)+1
+
+            # Devolvemos las probabilidades de cada clase
+            return final_predictions
+
+
+class StackingModel(EnsembleModel):
+
+    def __init__(self, models, final_predictor: keras.models.Sequential):
+        super().__init__(models)
+        self.final_predictor = final_predictor
+
+    def fit(self, X, y, epochs):
+        # Ajustamos los modelos
+        EnsembleModel.fit(self, X, y, epochs)
+
+        # Hacemos predicciones sobre los datos de entrenamiento
+        predictions = np.hstack(EnsembleModel.predict(self, X))
+
+        # Ajustamos el predictor final dandole como entrada las salidas
+        # de los modelos
+        self.final_predictor.fit(predictions, y, epochs=epochs)
+
+    def predict(self, X):
+        # Hacemos las predicciones individuales de cada modelo
+        pre_predictions = np.hstack(EnsembleModel.predict(self, X))
+
+        # Hacemos la prediccion final en base a la de los modelos
+        final_predictions = self.final_predictor.predict(pre_predictions)
+
+        # Devolvemos la clase finalmente elegida
+        # return np.argmax(final_predictions, axis=1) + 1
+
+        # Devolvemos las probabilidades de cada clase
+        return final_predictions
 
 
 class Node:
@@ -179,7 +212,7 @@ class AssignNode(Node):
 class KerasLexer(Lexer):
     tokens = {READ, DATASET, NORM, SPLIT, SEQUENTIAL, DENSE, COMPILE, FIT, PREDICT,
               BAGGING, STACKING, VISUALIZE, INT, FLOAT, VARIABLE,
-              ACTIVATION, OPTIMIZER, LOSS, METRIC, MEAN, MODE}
+              ACTIVATION, OPTIMIZER, LOSS, METRIC, MEAN, MODE, PRINT}
 
     literals = {'\'', '(', ')', '[', ']', '=', ','}
 
@@ -207,6 +240,8 @@ class KerasLexer(Lexer):
     METRIC = r'accuracy'
 
     VISUALIZE = r'visualize'
+
+    PRINT = r'print'
 
     MEAN = r'((?<![a-zA-Z0-9])(mean|Mean)(?![a-zA-Z0-9]))'
     MODE = r'((?<![a-zA-Z0-9])(mode|Mode)(?![a-zA-Z0-9]))'
@@ -281,6 +316,9 @@ class KerasParser(Parser):
         vars = p.Vars_1
         assignNode = AssignNode(vars, p.Ejec)
 
+        print(vars)
+        print(p.Ejec)
+
         # Asignamos cada valor a su respectiva variable
         for key, value in assignNode.execute().items():
             self.variables[key] = value
@@ -336,15 +374,17 @@ class KerasParser(Parser):
     def Ejec(self, p):
         return p.Bagging
 
-    """
     @_('Stacking')
     def Ejec(self, p):
         return p.Stacking
-    """
 
     @_('Visualize')
     def Ejec(self, p):
         return p.Visualize
+
+    @_('Print')
+    def Ejec(self, p):
+        return p.Print
 
     @_('READ "(" "\'" DATASET "\'" ")"')
     def Read(self, p):
@@ -449,10 +489,10 @@ class KerasParser(Parser):
         # Hacemos la prediccions
         return OperationNode(y_pred, OP_TYPE.BASIC)
 
-    @_('BAGGING "(" "[" Vars_2 "]" "," "\'" Bagging_Mode "\'" ")"')
+    @_('BAGGING "(" "[" Vars_1 "]" "," "\'" Bagging_Mode "\'" ")"')
     def Bagging(self, p):
 
-        args_models_vars = p.Vars_2
+        args_models_vars = p.Vars_1
 
         # Metemos todos los modelos en un array
         models = []
@@ -477,6 +517,19 @@ class KerasParser(Parser):
         # Creamos el modelo compuesto
         return ENSEMBLE_MODES.MODE
 
+    @_('STACKING "(" "[" Vars_1 "]" "," VARIABLE ")"')
+    def Stacking(self, p):
+
+        args_models_vars = p.Vars_1
+
+        # Metemos todos los modelos en un array
+        models = []
+        for var_name in set(args_models_vars):
+            models.append(self.variables[var_name])
+
+        # Creamos el modelo compuesto
+        return OperationNode(StackingModel(models, self.variables[p.VARIABLE]), OP_TYPE.BASIC)
+
     @_('VISUALIZE "(" VARIABLE ")"')
     def Visualize(self, p):
 
@@ -488,24 +541,39 @@ class KerasParser(Parser):
 
         return OperationNode(Node, OP_TYPE.BASIC)
 
+    @_('PRINT "(" VARIABLE ")"')
+    def Print(self, p):
+        print(str(self.variables[p.VARIABLE]))
+        return None
 
-if __name__ == '__main__':
+
+def execute(text):
+    lexer = KerasLexer()
+    parser = KerasParser()
+    parser.parse(lexer.tokenize(text))
+
+
+def execute_test():
     texts = []
+
+    # Carga el archivo de ejemplo
     with open('ejemplo1_prac_final.txt', 'r') as f:
         text = f.read()
         texts = text.split("@")
 
-    lexer = KerasLexer()
-    parser = KerasParser()
+    texts = texts[0:2]
 
-    indxsPrograma = 0
+    # Ejecuta los programas
+    for program in texts:
+        print("----- Programa a interpretar -----")
+        print(program)
+        print('----- Salida (si hay prints) -----')
+        execute(program)
+        print('*'*25)
+        print('')
 
-    print("Programa a interpretar:")
-    print(texts[indxsPrograma])
 
-    """
-    for token in lexer.tokenize(texts[indxsPrograma]):
-        print('Tipo {} -- Value {}'.format(token.type, token.value))
-    """
+if __name__ == '__main__':
 
-    parser.parse(lexer.tokenize(texts[indxsPrograma]))
+    # Ejecuta algunos programas de prueba
+    execute_test()
